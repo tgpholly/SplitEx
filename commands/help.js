@@ -9,11 +9,11 @@ module.exports.run = (client, msg, args = []) => {
         .setDescription("All Commands")
         .setFooter("SplitEx");
 
-        for (let i = 0; i < global.commandKeys.length; i++) {
+        for (let i = 0; i < Math.min(global.commandKeys.length, 10); i++) {
             const command = global.commands[global.commandKeys[i]];
 
             embed["fields"].push({
-                name: `${config.prefix}${global.commandKeys[i]}`,
+                name: `${msg.dbInfo.prefix}${global.commandKeys[i]}`,
                 value: command.info.description,
                 inline: true
             });

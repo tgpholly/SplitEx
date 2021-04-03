@@ -40,22 +40,32 @@ global.database = new sqlite.Database("SplitEx.sqlite");
 if (!fs.existsSync(__dirname + "/SplitEx.sqlite")) {
 	global.database.serialize(() => {
 		global.database.run(`
-			CREATE TABLE 'servers_info' (
-				'id' bigint(20) NOT NULL,
-				'server_id' varchar(24) NOT NULL,
-				'prefix' varchar(3) NOT NULL
-			);
-
-			ALTER TABLE 'servers_info'
-  			ADD PRIMARY KEY ('id');
-
-			ALTER TABLE 'servers_info'
-			MODIFY 'id' bigint(20) NOT NULL AUTO_INCREMENT;
+			CREATE TABLE servers_info (
+				"id" INTEGER PRIMARY KEY AUTOINCREMENT,
+				"server_id" VARCHAR(24) NOT NULL,
+				"prefix" VARCHAR(3) NOT NULL
+			)
 		`);
 	});
 } else {
 	global.database.serialize(() => {
 
+	});
+}
+
+async function databaseFetch(query) {
+	return new Promise((resolve, reject) => {
+		if (query.includes("LIMIT 1")) {
+			global.database.get(query, [], (err, row) => {
+				if (err) reject(err);
+				else resolve(row);
+			});
+		} else {
+			db.all(query, [], (err, rows) => {
+				if (err) reject(err);
+				else resolve(rows);
+			});
+		}
 	});
 }
 
@@ -102,12 +112,23 @@ function startBot() {
 
 	client.on("ready", () => global.log(`Connected to discord! Took ${new Date().getTime() - connectionStartTime}ms`));
 
-	client.on("message", (msg) => {
+	client.on("message", async (msg) => {
+		// Check if this server is in the database
+		let databaseServer = await databaseFetch(`SELECT id, prefix FROM servers_info WHERE server_id = "${msg.guild.id}" LIMIT 1`);
+		if (databaseServer == null) {
+			// We don't have this server in the database, add it.
+			await global.database.run(`INSERT INTO servers_info ("server_id", "prefix") VALUES ("${msg.guild.id}", "${config.prefix}")`);
+			databaseServer = await databaseFetch(`SELECT id, prefix FROM servers_info WHERE server_id = "${msg.guild.id}" LIMIT 1`);
+		}
+
+		// Inject the database info into the message class
+		msg.dbInfo = databaseServer;
+
 		let command = msg.content.split(" ")[0];
 
-		if (!command.startsWith(config.prefix)) return;
+		if (!command.startsWith(databaseServer.prefix)) return;
 
-		command = command.replace(config.prefix, "");
+		command = command.replace(databaseServer.prefix, "");
 
 		if (global.commandKeys.includes(command)) {
 			try {
