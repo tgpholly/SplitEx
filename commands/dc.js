@@ -7,14 +7,16 @@ module.exports.run = (client, msg, args) => {
 
     // Make sure we are even connected to this voice channel
     if (global.voiceChannels[voiceChannel.id] != null) {
+        // Cache voice channel object
+        const voiceObject = global.voiceChannels[voiceChannel.id];
         // Clear the queue
-        global.voiceChannels[voiceChannel.id].queue = [];
+        voiceObject.queue = [];
         // Make sure it can't play the next track in the queue if there is any
-        global.voiceChannels[voiceChannel.id].shouldPlayQueuedTracks = false;
+        voiceObject.shouldPlayQueuedTracks = false;
         // Stop the currently playing track
-        global.voiceChannels[voiceChannel.id].dispatcher.end();
+        if (voiceObject.dispatcher != null) voiceObject.dispatcher.end();
         // Leave the voice channel
-        global.voiceChannels[voiceChannel.id].voiceConnection.disconnect();
+        voiceObject.voiceConnection.disconnect();
         // Remove the voiceChannel object from the array
         delete global.voiceChannels[voiceChannel.id];
         
