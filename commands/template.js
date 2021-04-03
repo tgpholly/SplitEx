@@ -1,6 +1,6 @@
 const config = require("../config.json");
 
-module.exports.run = (client, msg, args) => {
+module.exports.run = (client, msg) => {
     msg.channel.send("This is a basic template command");
 }
 

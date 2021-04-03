@@ -1,5 +1,3 @@
-const QueueTrack = require("./QueueTrack.js");
-
 module.exports = class {
     constructor(channelID = 0, voiceChannelConnection = null, msg) {
         this.channelID = channelID;

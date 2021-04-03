@@ -1,6 +1,6 @@
 const config = require("../config.json");
 
-module.exports.run = (client, msg, args) => {
+module.exports.run = (client, msg) => {
     const voiceChannel = msg.member.voice.channel;
 
     if (!voiceChannel) return msg.reply("Looks like you're not in a voice channel");
