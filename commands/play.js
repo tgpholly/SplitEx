@@ -3,7 +3,7 @@ const Discord = require("discord.js"),
       VoiceChannel = require("../VoiceChannelQueueManager.js"),
       ytdl = require('ytdl-core-discord'),
       QueueTrack = require("../QueueTrack.js"),
-      youtubeSearch = require("youtube-sr");
+      youtubeSearch = require("youtube-sr").default;
 
 module.exports.run = async (client, msg, args) => {
     const voiceChannel = msg.member.voice.channel;
@@ -13,18 +13,9 @@ module.exports.run = async (client, msg, args) => {
     if (!voiceChannel) return msg.reply("Looks like you're not in a voice channel");
 
     let reconstructedString = null;
-    if (!args[0].includes("http://") || !args[0].includes("https://")) {
-        reconstructedString = "";
-        for (let i = 0; i < args.length; i++) {
-            if (i == 0) {
-                reconstructedString += args[i];
-            } else {
-                reconstructedString += ` ${args[i]}`;
-            }
-        }
-    }
+    if (!args[0].includes("http://") || !args[0].includes("https://")) reconstructedString = args.join(" ");
 
-    const searchMessage = msg.channel.send(`Searching for: "**${reconstructedString == null ? args[0] : reconstructedString.split("*").join("\\*")}**"`);
+    const searchMessage = await msg.channel.send(`Searching for: "**${reconstructedString == null ? args[0] : reconstructedString.split("*").join("\\*")}**"`);
 
     let searchData = null;
     if (!args[0].includes("http://") || !args[0].includes("https://")) {
@@ -67,19 +58,29 @@ module.exports.run = async (client, msg, args) => {
 }
 
 async function play(voiceConnection, channelID, videoInfo = null, messageToEdit = null) {
-    if (global.voiceChannels[channelID].queue.length > 0) global.voiceChannels[channelID].removeTopLevelObjectFromQueue();
+    if (global.voiceChannels[channelID].queue.length > 0 && !global.voiceChannels[channelID].loopCurrentSong) global.voiceChannels[channelID].removeTopLevelObjectFromQueue();
     global.voiceChannels[channelID].dispatcher = voiceConnection.play(await ytdl(videoInfo.trackURL), { type: "opus" });
 
     global.voiceChannels[channelID].dispatcher.on("start", () => {
-        global.voiceChannels[channelID].boundTextChannel.send("Now playing: **\"" + videoInfo.trackInfo.title.split("*").join("\\*") + "\"**");
+        if (!global.voiceChannels[channelID].loopCurrentSong) {
+            const messageToSend = "Now playing: **\"" + videoInfo.trackInfo.title.split("*").join("\\*") + "\"**";
+            if (messageToEdit == null) global.voiceChannels[channelID].boundTextChannel.send(messageToSend);
+            else messageToEdit.edit(messageToSend);
+        }
+
+        global.voiceChannels[channelID].skippedPreviousSong = false;
     });
 
     global.voiceChannels[channelID].dispatcher.on("finish", () => {
         if (global.voiceChannels[channelID] != null) {
-            global.voiceChannels[channelID].dispatcher = null;
-            if (global.voiceChannels[channelID].queue.length > 0) {
-                if (global.voiceChannels[channelID].executeAfterPlayActions)
-                    play(voiceConnection, channelID, global.voiceChannels[channelID].queue[0]);
+            const channel = global.voiceChannels[channelID];
+            channel.dispatcher = null;
+            if (channel.loopCurrentSong && !channel.skippedPreviousSong) {
+                play(voiceConnection, channelID, videoInfo);
+            } else if (channel.queue.length > 0) {
+                if (channel.executeAfterPlayActions) {
+                    play(voiceConnection, channelID, channel.queue[0]);
+                }
             }
         }
     });

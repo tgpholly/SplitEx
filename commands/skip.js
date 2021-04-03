@@ -5,6 +5,7 @@ module.exports.run = (client, msg, args) => {
 
     if (!voiceChannel) return msg.reply("Looks like you're not in a voice channel");
 
+    global.voiceChannels[voiceChannel.id].skippedPreviousSong = true;
     global.voiceChannels[voiceChannel.id].dispatcher.end();
 
     msg.channel.send("Skipped");

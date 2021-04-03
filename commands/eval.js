@@ -16,9 +16,9 @@ module.exports.run = (client, msg, args) => {
         .addField("**Input :arrow_right:**", `\`\`\`xl\n${code}\n\`\`\``)
         .addField("**Error :x:**", `\`\`\`xl\nCannot complete eval due to token being included\n\`\`\``)
 
-        if (code.includes("token")) return msg.channel.send(tokenError);
-
         evaled = require("util").inspect(evaled);
+
+        if (code.includes("token") || evaled.includes(config.token)) return msg.channel.send(tokenError);
 
         const successEmbed = new Discord.MessageEmbed()
         .setTitle("Eval Success :white_check_mark: ")

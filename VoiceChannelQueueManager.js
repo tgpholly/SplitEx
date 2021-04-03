@@ -16,6 +16,10 @@ module.exports = class {
 
         this.executeAfterPlayActions = true;
 
+        this.loopCurrentSong = false;
+
+        this.skippedPreviousSong = false;
+
         this.queue = [];
     }
 
