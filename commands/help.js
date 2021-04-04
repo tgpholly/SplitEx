@@ -10,6 +10,7 @@ module.exports.run = (client, msg, args = []) => {
         .setFooter("SplitEx");
 
         for (let i = 0; i < Math.min(global.commandKeys.length, 10); i++) {
+            if (i > (global.commands[global.commandKeys[i]].length - 1)) continue;
             const command = global.commands[global.commandKeys[i]];
 
             embed["fields"].push({
