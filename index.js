@@ -29,6 +29,8 @@ global.error = (e) => fs.appendFileSync("errors.log", `An error occured during e
 global.commands = {};
 global.commandKeys = [];
 
+let disableResponse = false;
+
 // Music stuff
 
 global.voiceChannels = {};
@@ -69,40 +71,43 @@ async function databaseFetch(query) {
 	});
 }
 
-// Get all files in the commands directory
+loadCommands();
 
-fs.readdir("./commands/", (err, files) => {
-	if (err) {
-		global.error(err);
-		console.error("There was a problem loading commands, the error was logged to errors.log");
-		process.exit(1);
-	}
-
-	global.log("Loading commands...");
-
-	// Make sure there are commands to load
-	if (files.length == 0) {
-		global.log("There are no commands to load!");
-		process.exit(1);
-	}
-
-	for (let file of files) {
-		try {
-			global.commands[file.split(".js")[0]] = require(`./commands/${file}`);
-			global.log(`Loaded command ${chalk.magenta(`[${file}]`)}`);
-		} catch (e) {
-			global.error(e);
-			console.warn(`There was an issue loading command [${file}] the error was logged to errors.log`);
+function loadCommands() {
+	// Get all files in the commands directory
+	fs.readdir("./commands/", (err, files) => {
+		if (err) {
+			global.error(err);
+			console.error("There was a problem loading commands, the error was logged to errors.log");
+			process.exit(1);
 		}
-	}
 
-	// Generate a list of keys for the commands
-	global.commandKeys = Object.keys(global.commands);
+		global.log("Loading commands...");
 
-	global.log(`Loaded ${global.commandKeys.length} commands`);
+		// Make sure there are commands to load
+		if (files.length == 0) {
+			global.log("There are no commands to load!");
+			process.exit(1);
+		}
 
-	startBot();
-});
+		for (let file of files) {
+			try {
+				global.commands[file.split(".js")[0]] = require(`./commands/${file}`);
+				global.log(`Loaded command ${chalk.magenta(`[${file}]`)}`);
+			} catch (e) {
+				global.error(e);
+				console.warn(`There was an issue loading command [${file}] the error was logged to errors.log`);
+			}
+		}
+
+		// Generate a list of keys for the commands
+		global.commandKeys = Object.keys(global.commands);
+
+		global.log(`Loaded ${global.commandKeys.length} commands`);
+
+		startBot();
+	});
+}
 
 function startBot() {
 	// Connect to discord
@@ -113,6 +118,7 @@ function startBot() {
 	client.on("ready", () => global.log(`Connected to discord! Took ${new Date().getTime() - connectionStartTime}ms`));
 
 	client.on("message", async (msg) => {
+		if (disableResponse) return;
 		// Check if this server is in the database
 		let databaseServer = await databaseFetch(`SELECT id, prefix FROM servers_info WHERE server_id = "${msg.guild.id}" LIMIT 1`);
 		if (databaseServer == null) {
