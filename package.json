@@ -21,7 +21,6 @@
     "chalk": "^4.1.0",
     "discord.js": "^12.5.1",
     "opus": "0.0.0",
-    "opusscript": "0.0.8",
     "pirate-speak": "^1.0.1",
     "prism-media": "^1.2.9",
     "sqlite3": "^5.0.2",
